@@ -179,6 +179,37 @@ canvas {
   background: #4da6ff;
 }
 
+/* ===== スマホ用 数字パッド ===== */
+.keypad {
+  display: none;              /* タッチ端末でのみ表示 */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+.key {
+  font-family: inherit;
+  font-size: 24px;
+  color: #fff;
+  background: #1322a8;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  padding: 12px 0;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #000;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.key:active { background: #2a44e0; transform: scale(.95); }
+.key[data-k="clear"] { background: #8a4a1a; }
+.key[data-k="del"]   { background: #6a2a6a; }
+
+/* タッチ端末では数字パッドを表示 */
+@media (hover: none) and (pointer: coarse) {
+  .keypad { display: grid; }
+}
+
 /* ===== スマホ用 十字キー ===== */
 .dpad {
   display: none;               /* タッチ端末でのみ表示 */

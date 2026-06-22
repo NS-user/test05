@@ -335,7 +335,7 @@ function nextQuestion() {
   input.value = '';
   input.disabled = false;
   $('quiz-submit').disabled = false;
-  input.focus();
+  if (!isTouch) input.focus();   // タッチ端末ではキーボードを開かない
   setMessage('問題を といて こうげき！');
   startQuizTimer();
 }
@@ -343,7 +343,7 @@ function nextQuestion() {
 function startQuizTimer() {
   clearInterval(quizTimer);
   // 難しい敵ほど制限時間は長め
-  timeLeft = 8 + currentEnemy.tier * 3;
+  timeLeft = 12 + currentEnemy.tier * 4;
   const total = timeLeft;
   const bar = $('quiz-timer');
   bar.style.setProperty('--t', '100%');
@@ -489,6 +489,24 @@ $('dpad').querySelectorAll('.dbtn').forEach(btn => {
   // touchstart を優先（反応を速く）。無い環境では click。
   btn.addEventListener('touchstart', handler, { passive: false });
   btn.addEventListener('click', handler);
+});
+
+// スマホ用 数字パッド
+const isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+if (isTouch) {
+  // ネイティブキーボードが勝手に開かないよう読み取り専用にし、パッドで入力
+  $('quiz-answer').readOnly = true;
+}
+$('keypad').querySelectorAll('.key').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    const input = $('quiz-answer');
+    if (input.disabled) return;
+    const k = btn.dataset.k;
+    if (k === 'del') input.value = input.value.slice(0, -1);
+    else if (k === 'clear') input.value = '';
+    else if (input.value.length < 7) input.value += k;
+  });
 });
 
 $('quiz-submit').addEventListener('click', submitAnswer);
