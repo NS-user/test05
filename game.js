@@ -477,6 +477,20 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// スマホ用 十字キー（タッチ／クリック両対応）
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+$('dpad').querySelectorAll('.dbtn').forEach(btn => {
+  const handler = e => {
+    e.preventDefault();
+    if (!screens.field.classList.contains('active')) return;
+    const d = DIRS[btn.dataset.dir];
+    if (d) moveHero(d[0], d[1]);
+  };
+  // touchstart を優先（反応を速く）。無い環境では click。
+  btn.addEventListener('touchstart', handler, { passive: false });
+  btn.addEventListener('click', handler);
+});
+
 $('quiz-submit').addEventListener('click', submitAnswer);
 $('quiz-answer').addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); submitAnswer(); }

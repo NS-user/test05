@@ -179,6 +179,53 @@ canvas {
   background: #4da6ff;
 }
 
+/* ===== スマホ用 十字キー ===== */
+.dpad {
+  display: none;               /* タッチ端末でのみ表示 */
+  position: relative;
+  width: 168px;
+  height: 168px;
+  margin: 6px auto 14px;
+}
+.dbtn {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  font-size: 22px;
+  color: #fff;
+  background: #1322a8;
+  border: 3px solid #fff;
+  border-radius: 10px;
+  box-shadow: 0 0 0 3px #000;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.dbtn:active { background: #2a44e0; transform: scale(.94); }
+.dbtn.up    { top: 0;    left: 56px; }
+.dbtn.left  { top: 56px; left: 0; }
+.dbtn.down  { top: 112px;left: 56px; }
+.dbtn.right { top: 56px; left: 112px; }
+
+/* タッチ端末では十字キーを表示 */
+@media (hover: none) and (pointer: coarse) {
+  .dpad { display: block; }
+}
+
+/* 画面が狭いとき全体をフィット */
+@media (max-width: 500px) {
+  body { align-items: flex-start; }
+  #game { border-width: 3px; }
+  .title { font-size: 28px; }
+  .quiz-question { font-size: 24px; }
+  #quiz-answer { font-size: 26px; }   /* iOSの自動ズーム防止(16px以上) */
+}
+
 /* ===== ゲームオーバー ===== */
 #gameover-screen {
   text-align: center;
