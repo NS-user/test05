@@ -1,0 +1,202 @@
+/* ===== 算術勇者クエスト スタイル ===== */
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #000;
+  color: #fff;
+  font-family: 'DotGothic16', monospace;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  -webkit-font-smoothing: none;
+  image-rendering: pixelated;
+}
+
+#game {
+  width: 480px;
+  max-width: 100vw;
+  background: #0a0a1a;
+  border: 4px solid #fff;
+  box-shadow: 0 0 0 4px #000, 0 0 24px rgba(80,120,255,.4);
+  position: relative;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  width: 100%;
+  background: #1a1a3a;
+}
+
+/* ===== 画面切り替え ===== */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ===== タイトル ===== */
+#title-screen {
+  text-align: center;
+  padding: 28px 16px 24px;
+  background: radial-gradient(circle at 50% 30%, #1b1b4a 0%, #06060f 80%);
+}
+.title {
+  font-size: 34px;
+  letter-spacing: 2px;
+  color: #ffe14d;
+  text-shadow: 3px 3px 0 #804000, -1px -1px 0 #000;
+}
+.subtitle {
+  font-size: 16px;
+  color: #9fd0ff;
+  margin: 6px 0 16px;
+  text-shadow: 2px 2px 0 #000;
+}
+.title-hero { margin: 8px auto 18px; }
+#title-canvas { width: 96px; height: 96px; background: transparent; margin: 0 auto; }
+
+/* ===== ボタン（ドラクエ風コマンドウィンドウ） ===== */
+.dq-btn {
+  font-family: inherit;
+  font-size: 16px;
+  color: #fff;
+  background: #1322a8;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px #000;
+  transition: transform .05s, background .1s;
+}
+.dq-btn:hover { background: #2a44e0; }
+.dq-btn:active { transform: translateY(2px); }
+
+.hint {
+  font-size: 12px;
+  color: #8888aa;
+  margin-top: 14px;
+}
+
+/* ===== HUD ===== */
+.hud {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #11112a;
+  border-bottom: 2px solid #fff;
+}
+.hud b { color: #ffe14d; }
+
+/* ===== バトル ===== */
+#battle-screen { background: #06060f; }
+.battle-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px 0;
+}
+.status-box {
+  flex: 1;
+  background: #11112a;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  padding: 5px 8px;
+}
+.status-line { font-size: 14px; }
+.status-line.small { font-size: 11px; color: #aab; }
+.hp-bar {
+  height: 8px;
+  background: #333;
+  border: 1px solid #000;
+  border-radius: 4px;
+  margin: 3px 0;
+  overflow: hidden;
+}
+.hp-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(#7CFC00, #2e8b00);
+  transition: width .3s;
+}
+.hp-fill.enemy { background: linear-gradient(#ff7b7b, #c01818); }
+
+.message-window {
+  margin: 8px 10px;
+  padding: 10px 12px;
+  background: #000;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  font-size: 15px;
+  min-height: 44px;
+}
+
+/* ===== クイズ ===== */
+.quiz-area {
+  margin: 0 10px 12px;
+  padding: 10px 12px;
+  background: #11112a;
+  border: 3px solid #ffe14d;
+  border-radius: 8px;
+  display: none;
+}
+.quiz-area.active { display: block; }
+.quiz-question {
+  font-size: 26px;
+  text-align: center;
+  color: #ffe14d;
+  margin-bottom: 10px;
+  text-shadow: 2px 2px 0 #000;
+}
+.quiz-input-row { display: flex; gap: 8px; }
+#quiz-answer {
+  flex: 1;
+  font-family: inherit;
+  font-size: 22px;
+  text-align: center;
+  padding: 8px;
+  border: 3px solid #fff;
+  border-radius: 6px;
+  background: #fff;
+  color: #000;
+}
+.quiz-timer {
+  margin-top: 8px;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.quiz-timer::after {
+  content: '';
+  display: block;
+  height: 100%;
+  width: var(--t, 100%);
+  background: #4da6ff;
+}
+
+/* ===== ゲームオーバー ===== */
+#gameover-screen {
+  text-align: center;
+  padding: 60px 16px;
+  background: #000;
+}
+.gameover-title { font-size: 30px; color: #ff5555; margin-bottom: 14px; }
+#gameover-text { font-size: 15px; margin-bottom: 24px; color: #ccc; }
+
+/* ダメージ点滅 */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+.shake { animation: shake .25s; }
+@keyframes flash-bg {
+  0%,100% { background:#06060f; }
+  50% { background:#5a0000; }
+}
+.flash { animation: flash-bg .25s; }

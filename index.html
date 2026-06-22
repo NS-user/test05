@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>算術勇者クエスト ～AIの冒険～</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game">
+    <!-- タイトル画面 -->
+    <div id="title-screen" class="screen active">
+      <h1 class="title">算術勇者クエスト</h1>
+      <p class="subtitle">～ AI の 冒険 ～</p>
+      <div class="title-hero">
+        <canvas id="title-canvas" width="64" height="64"></canvas>
+      </div>
+      <button id="start-btn" class="dq-btn">▶ ぼうけんをはじめる</button>
+      <p class="hint">移動: 方向キー / WASD ・ 決定: Enter</p>
+    </div>
+
+    <!-- フィールド画面 -->
+    <div id="field-screen" class="screen">
+      <div class="hud">
+        <span id="hud-name">AI</span>
+        <span>Lv <b id="hud-lv">1</b></span>
+        <span>HP <b id="hud-hp">20</b>/<b id="hud-maxhp">20</b></span>
+        <span>EXP <b id="hud-exp">0</b></span>
+      </div>
+      <canvas id="field-canvas" width="480" height="320"></canvas>
+      <p class="hint">草むらを歩くとモンスターが現れる！</p>
+    </div>
+
+    <!-- バトル画面 -->
+    <div id="battle-screen" class="screen">
+      <canvas id="battle-canvas" width="480" height="200"></canvas>
+      <div class="battle-status">
+        <div class="status-box">
+          <div class="status-line"><span id="b-enemy-name">スライム</span></div>
+          <div class="hp-bar"><div id="enemy-hp-fill" class="hp-fill enemy"></div></div>
+        </div>
+        <div class="status-box">
+          <div class="status-line">AI　Lv<span id="b-lv">1</span></div>
+          <div class="hp-bar"><div id="hero-hp-fill" class="hp-fill"></div></div>
+          <div class="status-line small">HP <span id="b-hp">20</span>/<span id="b-maxhp">20</span></div>
+        </div>
+      </div>
+      <div id="battle-message" class="message-window">モンスターが あらわれた！</div>
+      <div id="quiz-area" class="quiz-area">
+        <div id="quiz-question" class="quiz-question">2 + 3 = ?</div>
+        <div class="quiz-input-row">
+          <input id="quiz-answer" type="text" inputmode="numeric" autocomplete="off" placeholder="こたえ">
+          <button id="quiz-submit" class="dq-btn">こうげき！</button>
+        </div>
+        <div id="quiz-timer" class="quiz-timer"></div>
+      </div>
+    </div>
+
+    <!-- ゲームオーバー -->
+    <div id="gameover-screen" class="screen">
+      <h2 class="gameover-title">ゲームオーバー</h2>
+      <p id="gameover-text">AIは ちからつきた…</p>
+      <button id="retry-btn" class="dq-btn">▶ もういちど</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
