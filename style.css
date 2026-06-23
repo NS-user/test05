@@ -301,6 +301,33 @@ canvas {
   #quiz-answer { font-size: 26px; }   /* iOSの自動ズーム防止(16px以上) */
 }
 
+/* ===== バトル画面を1画面に収める（タッチ端末／数字パッド表示時） ===== */
+@media (hover: none) and (pointer: coarse) {
+  /* 敵キャンバスは高さを固定し、縦横比を保ったまま縮小（width:autoで歪まない） */
+  #battle-canvas {
+    width: auto;
+    height: 22vh;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  /* ステータス・メッセージ・クイズの余白を詰める */
+  .battle-status { padding: 5px 8px 0; }
+  .status-line { font-size: 13px; }
+  .message-window {
+    margin: 5px 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+    min-height: 0;
+  }
+  .quiz-area { margin: 0 8px 6px; padding: 6px 10px; }
+  .quiz-question { font-size: 20px; margin-bottom: 6px; }
+  #quiz-answer { height: 42px; }
+  .keypad { gap: 5px; margin-top: 6px; }
+  .key { padding: 7px 0; font-size: 20px; }
+  .submit-btn { margin-top: 6px; padding: 8px; font-size: 16px; }
+  .quiz-timer { margin-top: 5px; }
+}
+
 /* ===== ゲームオーバー ===== */
 #gameover-screen {
   text-align: center;
