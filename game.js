@@ -143,8 +143,15 @@ const BOSSES = [
   { name:'まおう',         spr:SPR_DEMON,  pal:PAL_DEMON },
 ];
 
-/* ---------- 数学問題（難易度 lv に応じて難化） ---------- */
-function makeQuiz(level) {
+/* ---------- 問題エンジン（科目データ駆動・○×形式） ----------
+   1問 = { subject, q(記述), a(true=正しい), e(解説) }
+   ・bank科目 … questions.js の QUESTIONS から出題
+   ・math科目 … 算式を動的生成して ○× 化（おまけ／いろんな科目デモ）
+   ・mix      … 全bank科目からランダム出題
+*/
+
+// 算術式を生成（難易度 level）→ { q:式, a:正しい答え(数値) }
+function makeArith(level) {
   let q, a;
   const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
   if (level <= 2) {
@@ -156,14 +163,47 @@ function makeQuiz(level) {
   } else if (level <= 6) {
     if (Math.random() < 0.5) { const y = r(2, 9), a2 = r(2, 9); q = `${y * a2} ÷ ${y}`; a = a2; }
     else { const x = r(2, 12), y = r(2, 9), z = r(1, 9); q = `${x} × ${y} + ${z}`; a = x * y + z; }
-  } else if (level <= 9) {
-    if (Math.random() < 0.5) { const x = r(2, 12), b = r(1, 20); q = `x + ${b} = ${x + b} のとき x = ?`; a = x; }
-    else { const base = r(2, 9); q = `${base}²`; a = base * base; }
   } else {
-    if (Math.random() < 0.5) { const x = r(3, 12), m = r(2, 6), b = r(1, 15); q = `${m}x + ${b} = ${m * x + b} のとき x = ?`; a = x; }
-    else { const x = r(11, 19), y = r(11, 19); q = `${x} × ${y}`; a = x * y; }
+    const base = r(2, 12); q = `${base}²`; a = base * base;
   }
   return { q, a };
+}
+
+// 算数を ○× 問題に変換（半々で誤答を提示）
+function makeMathOX(level) {
+  const { q, a } = makeArith(level);
+  let shown = a, correct = true;
+  if (Math.random() < 0.5) {
+    const span = Math.max(2, Math.floor(a * 0.15) + 2);
+    let off = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * span));
+    if (off === 0) off = 1;
+    shown = a + off; correct = false;
+  }
+  return { subject: '算数', q: `${q} = ${shown}`, a: correct, e: `正しい答えは ${q} = ${a}` };
+}
+
+// 直近に出した問題を避けるための記録
+const recentQ = [];
+function rememberQ(item) {
+  recentQ.push(item.q);
+  if (recentQ.length > 8) recentQ.shift();
+}
+
+// 科目キーから1問取り出す
+function pickQuestion(subjectKey, level) {
+  const subj = (window.SUBJECTS || []).find(s => s.key === subjectKey);
+  if (subj && subj.type === 'gen') return makeMathOX(level);
+
+  const bank = window.QUESTIONS || [];
+  let pool = (subj && subj.type === 'mix') ? bank.slice() : bank.filter(it => it.s === subjectKey);
+  if (pool.length === 0) return makeMathOX(level); // 念のためのフォールバック
+
+  let fresh = pool.filter(it => !recentQ.includes(it.q));
+  if (fresh.length === 0) fresh = pool;
+  const it = fresh[Math.floor(Math.random() * fresh.length)];
+  rememberQ(it);
+  const subName = (window.SUBJECTS.find(s => s.key === it.s) || {}).name || '';
+  return { subject: subName, q: it.q, a: it.a, e: it.e };
 }
 
 /* ---------- ゲーム状態 ---------- */
@@ -185,15 +225,25 @@ let quizTimer = null;
 let timeLeft = 0;
 let busy = false;           // 演出中の入力ロック
 let stepsSinceBattle = 0;   // ランダムエンカウント用
+let currentSubject = 'mix'; // 選択中の科目キー
+const session = { answered: 0, correct: 0 };  // 今回の成績
 
 /* ---------- DOM ---------- */
 const $ = id => document.getElementById(id);
 const screens = {
   title: $('title-screen'),
+  subject: $('subject-screen'),
   dungeon: $('dungeon-screen'),
   battle: $('battle-screen'),
   gameover: $('gameover-screen'),
 };
+function subjectName(key) {
+  const s = (window.SUBJECTS || []).find(x => x.key === key);
+  return s ? s.name : '-';
+}
+function accuracy() {
+  return session.answered ? Math.round(session.correct / session.answered * 100) : 0;
+}
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove('active'));
   screens[name].classList.add('active');
@@ -401,9 +451,9 @@ function updateHUD() {
   $('hud-lv').textContent = hero.lv;
   $('hud-hp').textContent = hero.hp;
   $('hud-maxhp').textContent = hero.maxhp;
-  $('hud-exp').textContent = hero.exp;
+  $('hud-subject').textContent = subjectName(currentSubject);
   $('hud-combo').textContent = hero.combo;
-  $('hud-best').textContent = best;
+  $('hud-acc').textContent = accuracy();
 }
 
 /* ---------- 移動 ---------- */
@@ -496,69 +546,95 @@ function updateBattleBars() {
 
 function setMessage(msg) { $('battle-message').textContent = msg; }
 
+/* ----- ○×ボタンの状態 ----- */
+function setOXEnabled(on) {
+  $('btn-o').disabled = !on;
+  $('btn-x').disabled = !on;
+  $('btn-o').classList.remove('right', 'wrong', 'picked');
+  $('btn-x').classList.remove('right', 'wrong', 'picked');
+}
+
 function nextQuestion() {
-  currentQuiz = makeQuiz(quizLevel());
-  $('quiz-question').textContent = currentQuiz.q + ' = ?';
+  currentQuiz = pickQuestion(currentSubject, quizLevel());
+  $('quiz-subject').textContent = currentQuiz.subject;
+  $('quiz-question').textContent = currentQuiz.q;
+  $('quiz-explain').classList.remove('show');
+  $('quiz-explain').textContent = '';
+  $('quiz-next').classList.remove('show');
+  setOXEnabled(true);
   $('quiz-area').classList.add('active');
-  const input = $('quiz-answer');
-  input.value = ''; input.disabled = false;
-  $('quiz-submit').disabled = false;
-  if (!isTouch) input.focus();
-  setMessage(hitsLeft > 1 ? `あと ${hitsLeft}回 せいかいで たおせる！` : '問題を といて こうげき！');
+  setMessage(hitsLeft > 1 ? `あと ${hitsLeft}回 せいかいで たおせる！ ○か×か？` : '○か×か えらんで こうげき！');
   busy = false;
   startQuizTimer();
 }
 
 function startQuizTimer() {
   clearInterval(quizTimer);
-  timeLeft = 12 + (isBossBattle ? 8 : Math.floor(floor / 3) * 2);
+  // 法律問題は読むのに時間がかかるので長め
+  timeLeft = 22 + (isBossBattle ? 8 : 0);
   const total = timeLeft;
   const bar = $('quiz-timer');
   bar.style.setProperty('--t', '100%');
   quizTimer = setInterval(() => {
     timeLeft -= 0.1;
     bar.style.setProperty('--t', Math.max(0, timeLeft / total * 100) + '%');
-    if (timeLeft <= 0) { clearInterval(quizTimer); onWrong(true); }
+    if (timeLeft <= 0) { clearInterval(quizTimer); answerOX(null); }
   }, 100);
 }
 
-function submitAnswer() {
+// val: 1=◯ / 0=× / null=時間切れ
+function answerOX(val) {
   if (!currentQuiz || busy) return;
-  const val = $('quiz-answer').value.trim();
-  if (val === '') return;
   clearInterval(quizTimer);
   busy = true;
-  $('quiz-answer').disabled = true; $('quiz-submit').disabled = true;
-  if (Number(val) === currentQuiz.a) onCorrect();
-  else onWrong(false);
-}
+  setOXEnabled(false);
 
-function onCorrect() {
-  hitsLeft--;
-  hero.combo++;
-  $('quiz-area').classList.remove('active');
-  updateBattleBars();
-  bCv.classList.remove('shake'); void bCv.offsetWidth; bCv.classList.add('shake');
-  if (hitsLeft <= 0) {
-    setMessage(`せいかい！ ${currentEnemy.name}に とどめ！`);
-    setTimeout(winBattle, 750);
+  const timeout = (val === null);
+  const correct = !timeout && ((val === 1) === currentQuiz.a);
+  session.answered++;
+  if (correct) session.correct++;
+
+  // 正解ボタンを緑、誤答で選んだボタンを赤くハイライト
+  const rightBtn = currentQuiz.a ? $('btn-o') : $('btn-x');
+  rightBtn.classList.add('right');
+  if (!timeout && !correct) (val === 1 ? $('btn-o') : $('btn-x')).classList.add('wrong');
+
+  // 解説
+  const head = correct ? '⭕ せいかい！' : (timeout ? '⏰ じかんぎれ…' : '❌ ざんねん…');
+  const ans = currentQuiz.a ? '◯（正しい）' : '✕（誤り）';
+  $('quiz-explain').innerHTML =
+    `<b class="${correct ? 'ex-ok' : 'ex-ng'}">${head}</b> 正解は <b>${ans}</b><br>${currentQuiz.e || ''}`;
+  $('quiz-explain').classList.add('show');
+
+  // 戦闘反映
+  if (correct) {
+    hitsLeft--; hero.combo++;
+    updateBattleBars();
+    bCv.classList.remove('shake'); void bCv.offsetWidth; bCv.classList.add('shake');
+    setMessage(hitsLeft <= 0 ? `${currentEnemy.name}に とどめ！` : `🔥コンボ x${hero.combo}！`);
   } else {
-    setMessage(`せいかい！ 🔥コンボ x${hero.combo}！`);
-    updateHUD();
-    setTimeout(nextQuestion, 800);
+    const dmg = 3 + Math.floor(floor / 2) + (isBossBattle ? 3 : 0) + Math.floor(Math.random() * 3);
+    hero.hp = Math.max(0, hero.hp - dmg);
+    hero.combo = 0;
+    updateBattleBars();
+    setMessage((timeout ? 'じかんぎれ！ ' : 'ざんねん！ ') + `${dmg}の ダメージ`);
+    screens.battle.classList.remove('flash'); void screens.battle.offsetWidth; screens.battle.classList.add('flash');
   }
+  updateHUD();
+
+  // 解説を読んでから「つぎへ」で進む（読む時間は減点しない）
+  $('quiz-next').textContent = (hero.hp <= 0) ? 'けっか ▶' : (hitsLeft <= 0 ? 'とどめ ▶' : 'つぎへ ▶');
+  $('quiz-next').classList.add('show');
 }
 
-function onWrong(timeout) {
-  const dmg = 3 + Math.floor(floor / 2) + (isBossBattle ? 3 : 0) + Math.floor(Math.random() * 3);
-  hero.hp = Math.max(0, hero.hp - dmg);
-  hero.combo = 0;
-  $('quiz-area').classList.remove('active');
-  updateBattleBars(); updateHUD();
-  setMessage((timeout ? 'じかんぎれ！ ' : 'ざんねん！ ') + `${dmg}の ダメージ…（こたえは ${currentQuiz.a}）`);
-  screens.battle.classList.remove('flash'); void screens.battle.offsetWidth; screens.battle.classList.add('flash');
-  if (hero.hp <= 0) setTimeout(gameOver, 1000);
-  else setTimeout(nextQuestion, 1200);
+// 「つぎへ」：次の問題／勝利／ゲームオーバーへ
+function continueBattle() {
+  if (!busy) return;
+  $('quiz-explain').classList.remove('show');
+  $('quiz-next').classList.remove('show');
+  if (hero.hp <= 0) { gameOver(); return; }
+  if (hitsLeft <= 0) { winBattle(); return; }
+  nextQuestion();
 }
 
 function winBattle() {
@@ -597,23 +673,41 @@ function endBattle() {
 /* ---------- ゲームオーバー ---------- */
 function gameOver() {
   showScreen('gameover');
-  $('gameover-text').textContent = `AIは ${floor}F で ちからつきた…  （最高到達 ${best}F / Lv${hero.lv}）`;
+  $('gameover-text').innerHTML =
+    `${floor}F で ちからつきた…（最高到達 ${best}F / Lv${hero.lv}）<br>` +
+    `📘 ${subjectName(currentSubject)}　正答率 <b>${accuracy()}%</b>（${session.correct}/${session.answered}問）`;
 }
 
-/* ---------- リセット / 開始 ---------- */
+/* ---------- 科目選択 / リセット / 開始 ---------- */
+function showSubjectScreen() {
+  const list = $('subject-list');
+  list.innerHTML = '';
+  (window.SUBJECTS || []).forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'subject-btn' + (s.type === 'gen' ? ' bonus' : '') + (s.type === 'mix' ? ' mix' : '');
+    btn.textContent = s.name;
+    btn.addEventListener('click', () => startGame(s.key));
+    list.appendChild(btn);
+  });
+  showScreen('subject');
+}
+
 function resetGame() {
   floor = 1;
   hero.lv = 1; hero.hp = 20; hero.maxhp = 20; hero.exp = 0; hero.next = 10; hero.combo = 0;
   busy = false;
+  session.answered = 0; session.correct = 0;
+  recentQ.length = 0;
   genFloor(1);
   updateHUD();
 }
-function startGame() {
+function startGame(subjectKey) {
+  currentSubject = subjectKey || currentSubject || 'mix';
   resetGame();
   startBGM();
   showScreen('dungeon');
   drawDungeon();
-  toast('▲ 1F  とうの ぼうけん スタート！');
+  toast(`▲ 1F  ${subjectName(currentSubject)}の とうへ！`);
 }
 
 /* ---------- 入力 ---------- */
@@ -626,8 +720,17 @@ document.addEventListener('keydown', e => {
     };
     if (m[e.key]) { e.preventDefault(); tryMove(m[e.key][0], m[e.key][1]); }
   }
-  if (screens.battle.classList.contains('active') && e.key === 'Enter') { e.preventDefault(); submitAnswer(); }
-  if (screens.title.classList.contains('active') && e.key === 'Enter') startGame();
+  if (screens.battle.classList.contains('active')) {
+    if (!busy) {
+      // 回答前：◯=O/1/←, ×=X/0/→
+      if (e.key === 'o' || e.key === 'O' || e.key === '1' || e.key === 'ArrowLeft')  { e.preventDefault(); answerOX(1); }
+      if (e.key === 'x' || e.key === 'X' || e.key === '0' || e.key === 'ArrowRight') { e.preventDefault(); answerOX(0); }
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      // 回答後：つぎへ
+      e.preventDefault(); continueBattle();
+    }
+  }
+  if (screens.title.classList.contains('active') && e.key === 'Enter') showSubjectScreen();
 });
 
 // 十字キー
@@ -643,24 +746,13 @@ $('dpad').querySelectorAll('.dbtn').forEach(btn => {
   btn.addEventListener('click', handler);
 });
 
-// 数字パッド
-if (isTouch) $('quiz-answer').readOnly = true;
-$('keypad').querySelectorAll('.key').forEach(btn => {
-  btn.addEventListener('click', e => {
-    e.preventDefault();
-    const input = $('quiz-answer');
-    if (input.disabled) return;
-    const k = btn.dataset.k;
-    if (k === 'del') input.value = input.value.slice(0, -1);
-    else if (k === 'clear') input.value = '';
-    else if (input.value.length < 7) input.value += k;
-  });
-});
+// ○×回答ボタン
+$('btn-o').addEventListener('click', () => answerOX(1));
+$('btn-x').addEventListener('click', () => answerOX(0));
+$('quiz-next').addEventListener('click', continueBattle);
 
-$('quiz-submit').addEventListener('click', submitAnswer);
-$('quiz-answer').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitAnswer(); } });
-$('start-btn').addEventListener('click', startGame);
-$('retry-btn').addEventListener('click', startGame);
+$('start-btn').addEventListener('click', showSubjectScreen);
+$('retry-btn').addEventListener('click', showSubjectScreen);
 
 /* ---------- BGM（魔王魂「ラストボス02」） ---------- */
 // ローカルに音源があればそれを、無ければ魔王魂CDNから直接読み込む（プレイ側ブラウザで再生）

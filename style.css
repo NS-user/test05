@@ -170,7 +170,38 @@ canvas {
   min-height: 44px;
 }
 
-/* ===== クイズ ===== */
+/* ===== 科目選択画面 ===== */
+#subject-screen {
+  text-align: center;
+  padding: 22px 16px;
+  background: radial-gradient(circle at 50% 25%, #16163e 0%, #06060f 80%);
+}
+.subject-title { font-size: 24px; color: #ffe14d; text-shadow: 2px 2px 0 #000; }
+.subject-lead { font-size: 13px; color: #9fd0ff; margin: 6px 0 16px; }
+.subject-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.subject-btn {
+  font-family: inherit;
+  font-size: 15px;
+  color: #fff;
+  background: #1322a8;
+  border: 3px solid #fff;
+  border-radius: 8px;
+  padding: 14px 8px;
+  cursor: pointer;
+  box-shadow: 0 0 0 3px #000;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.subject-btn:hover { background: #2a44e0; }
+.subject-btn:active { transform: translateY(2px); }
+.subject-btn.mix   { grid-column: 1 / -1; background: #8a1a5a; }
+.subject-btn.bonus { background: #1a6a3a; }
+
+/* ===== クイズ（○×形式） ===== */
 .quiz-area {
   margin: 0 10px 12px;
   padding: 10px 12px;
@@ -180,34 +211,80 @@ canvas {
   display: none;
 }
 .quiz-area.active { display: block; }
+.quiz-subject {
+  display: inline-block;
+  font-size: 12px;
+  color: #06060f;
+  background: #ffe14d;
+  border-radius: 4px;
+  padding: 1px 8px;
+  margin-bottom: 6px;
+}
 .quiz-question {
-  font-size: 26px;
-  text-align: center;
-  color: #ffe14d;
+  font-size: 17px;
+  line-height: 1.5;
+  text-align: left;
+  color: #eef;
   margin-bottom: 10px;
-  text-shadow: 2px 2px 0 #000;
 }
-#quiz-answer {
-  display: block;
-  width: 100%;
-  height: 52px;
-  box-sizing: border-box;
+/* ○×の2ボタン */
+.ox-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ox-btn {
   font-family: inherit;
-  font-size: 24px;
-  text-align: center;
-  padding: 8px;
+  font-size: 30px;
+  font-weight: bold;
+  color: #fff;
   border: 3px solid #fff;
-  border-radius: 6px;
-  background: #fff;
-  color: #000;
+  border-radius: 10px;
+  padding: 10px 0 8px;
+  cursor: pointer;
+  box-shadow: 0 0 0 2px #000;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
 }
-/* こうげき！ボタン（数字パッドの下・横いっぱい） */
-.submit-btn {
-  display: block;
+.ox-btn small { font-size: 12px; font-weight: normal; margin-top: 4px; opacity: .9; }
+.ox-o { background: #1769d6; }
+.ox-x { background: #c0392b; }
+.ox-btn:active { transform: scale(.96); }
+.ox-btn:disabled { opacity: .5; cursor: default; }
+.ox-btn.right { background: #1f9d4d !important; opacity: 1; border-color: #aef5c4; }
+.ox-btn.wrong { background: #7a1620 !important; opacity: 1; border-color: #ff9aa0; }
+
+/* 解説 */
+.quiz-explain {
+  display: none;
+  margin-top: 10px;
+  padding: 9px 11px;
+  background: #0a0a1a;
+  border: 2px solid #4da6ff;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #cdd6f5;
+  max-height: 30vh;
+  overflow-y: auto;
+}
+.quiz-explain.show { display: block; }
+.quiz-explain .ex-ok { color: #6cf09a; }
+.quiz-explain .ex-ng { color: #ff8a90; }
+
+/* つぎへ ボタン */
+.next-btn {
+  display: none;
   width: 100%;
   margin-top: 10px;
-  font-size: 18px;
+  font-size: 17px;
 }
+.next-btn.show { display: block; }
+
 .quiz-timer {
   margin-top: 8px;
   height: 6px;
@@ -221,37 +298,6 @@ canvas {
   height: 100%;
   width: var(--t, 100%);
   background: #4da6ff;
-}
-
-/* ===== スマホ用 数字パッド ===== */
-.keypad {
-  display: none;              /* タッチ端末でのみ表示 */
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 10px;
-}
-.key {
-  font-family: inherit;
-  font-size: 24px;
-  color: #fff;
-  background: #1322a8;
-  border: 3px solid #fff;
-  border-radius: 8px;
-  padding: 12px 0;
-  cursor: pointer;
-  box-shadow: 0 0 0 2px #000;
-  -webkit-user-select: none;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
-.key:active { background: #2a44e0; transform: scale(.95); }
-.key[data-k="clear"] { background: #8a4a1a; }
-.key[data-k="del"]   { background: #6a2a6a; }
-
-/* タッチ端末では数字パッドを表示 */
-@media (hover: none) and (pointer: coarse) {
-  .keypad { display: grid; }
 }
 
 /* ===== スマホ用 十字キー ===== */
@@ -297,8 +343,7 @@ canvas {
   body { align-items: flex-start; }
   #game { border-width: 3px; }
   .title { font-size: 28px; }
-  .quiz-question { font-size: 24px; }
-  #quiz-answer { font-size: 26px; }   /* iOSの自動ズーム防止(16px以上) */
+  .subject-btn { font-size: 14px; padding: 13px 6px; }
 }
 
 /* ===== バトル画面を1画面に収める（タッチ端末／数字パッド表示時） ===== */
@@ -337,13 +382,15 @@ canvas {
     min-height: 0;
     border-width: 2px;
   }
-  .quiz-area { margin: 0 8px 5px; padding: 5px 9px; border-width: 2px; }
-  .quiz-question { font-size: 18px; margin-bottom: 5px; }
-  #quiz-answer { height: 38px; font-size: 18px; padding: 4px; }
-  .keypad { gap: 4px; margin-top: 5px; }
-  .key { padding: 5px 0; font-size: 18px; border-width: 2px; }
-  .submit-btn { margin-top: 5px; padding: 6px; font-size: 15px; }
-  .quiz-timer { margin-top: 4px; height: 5px; }
+  .quiz-area { margin: 0 8px 5px; padding: 6px 9px; border-width: 2px; }
+  .quiz-subject { margin-bottom: 4px; }
+  .quiz-question { font-size: 15px; line-height: 1.45; margin-bottom: 7px; }
+  .ox-buttons { gap: 8px; }
+  .ox-btn { font-size: 26px; padding: 8px 0 6px; }
+  .ox-btn small { font-size: 11px; margin-top: 3px; }
+  .quiz-explain { font-size: 12px; margin-top: 7px; padding: 7px 9px; max-height: 26vh; }
+  .next-btn { margin-top: 7px; padding: 7px; font-size: 15px; }
+  .quiz-timer { margin-top: 5px; height: 5px; }
 }
 
 /* ===== ゲームオーバー ===== */

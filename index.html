@@ -3,22 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>算術勇者クエスト ～AIの塔～</title>
-<link rel="stylesheet" href="style.css?v=3">
+<title>まなびクエスト ～知識の塔～（司法試験サンプル）</title>
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
   <div id="game">
     <!-- タイトル画面 -->
     <div id="title-screen" class="screen active">
-      <h1 class="title">算術勇者クエスト</h1>
-      <p class="subtitle">～ AI の 塔 ～</p>
+      <h1 class="title">まなびクエスト</h1>
+      <p class="subtitle">～ 知識の塔 ～</p>
       <div class="title-hero">
         <canvas id="title-canvas" width="64" height="64"></canvas>
       </div>
       <button id="start-btn" class="dq-btn">▲ とうに のぼる</button>
-      <p class="hint">階段(▲)を のぼって 上の階へ！<br>5階ごとに ボスが まちうける…</p>
+      <p class="hint">科目をえらんで、○×問題で 敵をたおそう！<br>5階ごとに ボスが まちうける…</p>
       <p class="hint">移動: 方向キー / WASD ・ 決定: Enter</p>
-      <p class="credit">BGM: <a href="https://maou.audio/game_lastboss02/" target="_blank" rel="noopener">魔王魂「ラストボス02」</a></p>
+      <p class="credit">サンプル科目：司法試験／予備試験（短答）対策</p>
+    </div>
+
+    <!-- 科目選択画面 -->
+    <div id="subject-screen" class="screen">
+      <h2 class="subject-title">かもくを えらぶ</h2>
+      <p class="subject-lead">勉強したい科目を タップ！</p>
+      <div id="subject-list" class="subject-list"><!-- JSで生成 --></div>
     </div>
 
     <!-- ダンジョン画面 -->
@@ -27,9 +34,9 @@
         <span>▲<b id="hud-floor">1</b>F</span>
         <span>Lv<b id="hud-lv">1</b></span>
         <span>HP<b id="hud-hp">20</b>/<b id="hud-maxhp">20</b></span>
-        <span>EXP<b id="hud-exp">0</b></span>
+        <span>📘<b id="hud-subject">-</b></span>
         <span>🔥<b id="hud-combo">0</b></span>
-        <span>最高<b id="hud-best">1</b>F</span>
+        <span>正答<b id="hud-acc">0</b>%</span>
         <button id="bgm-btn" class="bgm-btn" title="BGM オン/オフ">🔊</button>
       </div>
       <div class="canvas-wrap">
@@ -43,7 +50,7 @@
         <button class="dbtn down"  data-dir="down"  aria-label="下">▼</button>
         <button class="dbtn right" data-dir="right" aria-label="右">▶</button>
       </div>
-      <p class="hint">敵にぶつかると バトル！ ▲は階段 ・ 🧪は回復</p>
+      <p class="hint">敵にぶつかると 問題バトル！ ▲は階段 ・ 🧪は回復</p>
     </div>
 
     <!-- バトル画面 -->
@@ -55,31 +62,23 @@
           <div class="hp-bar"><div id="enemy-hp-fill" class="hp-fill enemy"></div></div>
         </div>
         <div class="status-box">
-          <div class="status-line">AI Lv<span id="b-lv">1</span> 🔥<span id="b-combo">0</span></div>
+          <div class="status-line">Lv<span id="b-lv">1</span> 🔥<span id="b-combo">0</span></div>
           <div class="hp-bar"><div id="hero-hp-fill" class="hp-fill"></div></div>
           <div class="status-line small">HP <span id="b-hp">20</span>/<span id="b-maxhp">20</span></div>
         </div>
       </div>
       <div id="battle-message" class="message-window">モンスターが あらわれた！</div>
       <div id="quiz-area" class="quiz-area">
-        <div id="quiz-question" class="quiz-question">2 + 3 = ?</div>
-        <input id="quiz-answer" type="text" inputmode="numeric" autocomplete="off" placeholder="こたえ">
-        <!-- スマホ用 数字パッド -->
-        <div id="keypad" class="keypad">
-          <button class="key" data-k="1">1</button>
-          <button class="key" data-k="2">2</button>
-          <button class="key" data-k="3">3</button>
-          <button class="key" data-k="4">4</button>
-          <button class="key" data-k="5">5</button>
-          <button class="key" data-k="6">6</button>
-          <button class="key" data-k="7">7</button>
-          <button class="key" data-k="8">8</button>
-          <button class="key" data-k="9">9</button>
-          <button class="key" data-k="clear">C</button>
-          <button class="key" data-k="0">0</button>
-          <button class="key" data-k="del">⌫</button>
+        <div id="quiz-subject" class="quiz-subject">憲法</div>
+        <div id="quiz-question" class="quiz-question">問題文…</div>
+        <!-- ○×回答ボタン -->
+        <div id="ox-buttons" class="ox-buttons">
+          <button id="btn-o" class="ox-btn ox-o" data-v="1">◯<small>正しい</small></button>
+          <button id="btn-x" class="ox-btn ox-x" data-v="0">✕<small>誤り</small></button>
         </div>
-        <button id="quiz-submit" class="dq-btn submit-btn">こうげき！</button>
+        <!-- 解説 -->
+        <div id="quiz-explain" class="quiz-explain"></div>
+        <button id="quiz-next" class="dq-btn next-btn">つぎへ ▶</button>
         <div id="quiz-timer" class="quiz-timer"></div>
       </div>
     </div>
@@ -87,11 +86,12 @@
     <!-- ゲームオーバー -->
     <div id="gameover-screen" class="screen">
       <h2 class="gameover-title">ゲームオーバー</h2>
-      <p id="gameover-text">AIは ちからつきた…</p>
+      <p id="gameover-text">ちからつきた…</p>
       <button id="retry-btn" class="dq-btn">▲ もういちど とうへ</button>
     </div>
   </div>
 
-  <script src="game.js"></script>
+  <script src="questions.js?v=4"></script>
+  <script src="game.js?v=4"></script>
 </body>
 </html>
