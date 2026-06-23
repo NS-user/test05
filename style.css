@@ -303,29 +303,48 @@ canvas {
 
 /* ===== バトル画面を1画面に収める（タッチ端末／数字パッド表示時） ===== */
 @media (hover: none) and (pointer: coarse) {
-  /* 敵キャンバスは高さを固定し、縦横比を保ったまま縮小（width:autoで歪まない） */
-  #battle-canvas {
-    width: auto;
-    height: 22vh;
-    max-width: 100%;
-    margin: 0 auto;
+  /* バトル中だけ、実表示領域(dvh)ぴったりの縦フレックスにする */
+  #game:has(#battle-screen.active) {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
   }
-  /* ステータス・メッセージ・クイズの余白を詰める */
-  .battle-status { padding: 5px 8px 0; }
-  .status-line { font-size: 13px; }
-  .message-window {
-    margin: 5px 8px;
-    padding: 7px 10px;
-    font-size: 13px;
+  #battle-screen.active {
+    flex: 1;
     min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
-  .quiz-area { margin: 0 8px 6px; padding: 6px 10px; }
-  .quiz-question { font-size: 20px; margin-bottom: 6px; }
-  #quiz-answer { height: 42px; }
-  .keypad { gap: 5px; margin-top: 6px; }
-  .key { padding: 7px 0; font-size: 20px; }
-  .submit-btn { margin-top: 6px; padding: 8px; font-size: 16px; }
-  .quiz-timer { margin-top: 5px; }
+
+  /* 敵キャンバスが「余ったスペース」を吸収して縮む（縦横比は維持・歪まない） */
+  #battle-canvas {
+    flex: 1 1 0;
+    min-height: 0;
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    align-self: center;
+  }
+
+  /* ↓固定表示する部分は高さを詰めて、クイズ・キーパッドが必ず収まるように */
+  .battle-status { padding: 4px 8px 0; }
+  .status-line { font-size: 12px; }
+  .status-line.small { font-size: 10px; }
+  .hp-bar { height: 6px; margin: 2px 0; }
+  .message-window {
+    margin: 4px 8px;
+    padding: 5px 9px;
+    font-size: 12px;
+    min-height: 0;
+    border-width: 2px;
+  }
+  .quiz-area { margin: 0 8px 5px; padding: 5px 9px; border-width: 2px; }
+  .quiz-question { font-size: 18px; margin-bottom: 5px; }
+  #quiz-answer { height: 38px; font-size: 18px; padding: 4px; }
+  .keypad { gap: 4px; margin-top: 5px; }
+  .key { padding: 5px 0; font-size: 18px; border-width: 2px; }
+  .submit-btn { margin-top: 5px; padding: 6px; font-size: 15px; }
+  .quiz-timer { margin-top: 4px; height: 5px; }
 }
 
 /* ===== ゲームオーバー ===== */
