@@ -316,18 +316,17 @@ canvas {
     flex-direction: column;
   }
 
-  /* 敵キャンバスが「余ったスペース」を吸収して縮む（縦横比は維持・歪まない） */
+  /* 敵キャンバスは伸ばさない（480x200の比率を維持）。狭いとき＝クイズ表示時だけ縮む */
   #battle-canvas {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-height: 0;
-    width: auto;
+    width: 100%;
     height: auto;
-    max-width: 100%;
-    align-self: center;
   }
 
   /* ↓固定表示する部分は高さを詰めて、クイズ・キーパッドが必ず収まるように */
-  .battle-status { padding: 4px 8px 0; }
+  /* ステータス以下を下端に寄せる（上の余白は黒背景のまま・キャンバスは引き伸ばさない） */
+  .battle-status { padding: 4px 8px 0; margin-top: auto; }
   .status-line { font-size: 12px; }
   .status-line.small { font-size: 10px; }
   .hp-bar { height: 6px; margin: 2px 0; }
