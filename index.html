@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>算術勇者クエスト ～AIの冒険～</title>
+<title>算術勇者クエスト ～AIの塔～</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,24 +11,29 @@
     <!-- タイトル画面 -->
     <div id="title-screen" class="screen active">
       <h1 class="title">算術勇者クエスト</h1>
-      <p class="subtitle">～ AI の 冒険 ～</p>
+      <p class="subtitle">～ AI の 塔 ～</p>
       <div class="title-hero">
         <canvas id="title-canvas" width="64" height="64"></canvas>
       </div>
-      <button id="start-btn" class="dq-btn">▶ ぼうけんをはじめる</button>
+      <button id="start-btn" class="dq-btn">▲ とうに のぼる</button>
+      <p class="hint">階段(▲)を のぼって 上の階へ！<br>5階ごとに ボスが まちうける…</p>
       <p class="hint">移動: 方向キー / WASD ・ 決定: Enter</p>
     </div>
 
-    <!-- フィールド画面 -->
-    <div id="field-screen" class="screen">
+    <!-- ダンジョン画面 -->
+    <div id="dungeon-screen" class="screen">
       <div class="hud">
-        <span id="hud-name">AI</span>
-        <span>Lv <b id="hud-lv">1</b></span>
-        <span>HP <b id="hud-hp">20</b>/<b id="hud-maxhp">20</b></span>
-        <span>EXP <b id="hud-exp">0</b></span>
+        <span>▲<b id="hud-floor">1</b>F</span>
+        <span>Lv<b id="hud-lv">1</b></span>
+        <span>HP<b id="hud-hp">20</b>/<b id="hud-maxhp">20</b></span>
+        <span>EXP<b id="hud-exp">0</b></span>
+        <span>🔥<b id="hud-combo">0</b></span>
+        <span>最高<b id="hud-best">1</b>F</span>
       </div>
-      <canvas id="field-canvas" width="480" height="320"></canvas>
-      <p class="hint">草むらを歩くとモンスターが現れる！</p>
+      <div class="canvas-wrap">
+        <canvas id="dungeon-canvas" width="480" height="320"></canvas>
+        <div id="toast" class="toast"></div>
+      </div>
       <!-- スマホ用 十字キー -->
       <div id="dpad" class="dpad">
         <button class="dbtn up"    data-dir="up"    aria-label="上">▲</button>
@@ -36,6 +41,7 @@
         <button class="dbtn down"  data-dir="down"  aria-label="下">▼</button>
         <button class="dbtn right" data-dir="right" aria-label="右">▶</button>
       </div>
+      <p class="hint">敵にぶつかると バトル！ ▲は階段 ・ 🧪は回復</p>
     </div>
 
     <!-- バトル画面 -->
@@ -47,7 +53,7 @@
           <div class="hp-bar"><div id="enemy-hp-fill" class="hp-fill enemy"></div></div>
         </div>
         <div class="status-box">
-          <div class="status-line">AI　Lv<span id="b-lv">1</span></div>
+          <div class="status-line">AI Lv<span id="b-lv">1</span> 🔥<span id="b-combo">0</span></div>
           <div class="hp-bar"><div id="hero-hp-fill" class="hp-fill"></div></div>
           <div class="status-line small">HP <span id="b-hp">20</span>/<span id="b-maxhp">20</span></div>
         </div>
@@ -80,7 +86,7 @@
     <div id="gameover-screen" class="screen">
       <h2 class="gameover-title">ゲームオーバー</h2>
       <p id="gameover-text">AIは ちからつきた…</p>
-      <button id="retry-btn" class="dq-btn">▶ もういちど</button>
+      <button id="retry-btn" class="dq-btn">▲ もういちど とうへ</button>
     </div>
   </div>
 

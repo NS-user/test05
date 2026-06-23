@@ -92,6 +92,27 @@ canvas {
 }
 .hud b { color: #ffe14d; }
 
+/* ===== ダンジョン ＝ トースト通知 ===== */
+.canvas-wrap { position: relative; }
+.toast {
+  position: absolute;
+  left: 50%;
+  top: 12px;
+  transform: translateX(-50%);
+  background: #000;
+  border: 2px solid #ffe14d;
+  color: #ffe14d;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+  z-index: 5;
+}
+.toast.show { opacity: 1; }
+
 /* ===== バトル ===== */
 #battle-screen { background: #06060f; }
 .battle-status {
