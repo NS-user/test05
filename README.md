@@ -40,6 +40,12 @@
 | `game.js`       | ゲームロジック・フロア生成・ドット絵描画 |
 | `furikaeri.html`| 開発のふりかえり（学習メモ）ページ |
 
+## BGM / クレジット
+
+- BGM: **魔王魂「ラストボス02」**（作曲：森田交一） <https://maou.audio/game_lastboss02/>
+- 再生は魔王魂CDNから直接読み込みます。`bgm/lastboss02.mp3` を置くと、そのローカル音源を優先します。
+- 利用にあたっては[魔王魂の利用規約](https://maou.audio/rule/)に従ってください。
+
 ## 動かす
 
 ```bash

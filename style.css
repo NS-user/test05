@@ -91,6 +91,20 @@ canvas {
   border-bottom: 2px solid #fff;
 }
 .hud b { color: #ffe14d; }
+.bgm-btn {
+  margin-left: auto;
+  font-family: inherit;
+  font-size: 13px;
+  color: #fff;
+  background: #1322a8;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  padding: 1px 7px;
+  cursor: pointer;
+}
+.bgm-btn:active { transform: translateY(1px); }
+.credit { font-size: 11px; color: #7780a0; margin-top: 8px; }
+.credit a { color: #9fd0ff; }
 
 /* ===== ダンジョン ＝ トースト通知 ===== */
 .canvas-wrap { position: relative; }

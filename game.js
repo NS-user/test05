@@ -184,6 +184,7 @@ let currentQuiz = null;
 let quizTimer = null;
 let timeLeft = 0;
 let busy = false;           // 演出中の入力ロック
+let stepsSinceBattle = 0;   // ランダムエンカウント用
 
 /* ---------- DOM ---------- */
 const $ = id => document.getElementById(id);
@@ -269,6 +270,7 @@ function genFloor(f) {
     enemies.push({ x: 7, y: 3, def, hp: req, maxhp: req, isBoss: true, exp: 20 + f * 3 });
     // 回復をひとつ置く
     placeEntities(1, 'item', f);
+    stepsSinceBattle = 0;
     return;
   }
 
@@ -287,9 +289,10 @@ function genFloor(f) {
     for (let r = 1; r < ROWS - 1; r++) for (let c = 1; c < COLS - 1; c++) map[r][c] = 0;
   }
 
-  placeEntities(Math.min(2 + Math.floor(f / 2), 5), 'enemy', f);
+  // 雑魚はマップに出さず、移動中にランダムエンカウント
   const pots = (Math.random() < 0.6 ? 1 : 0) + (f % 3 === 0 ? 1 : 0);
   placeEntities(pots, 'item', f);
+  stepsSinceBattle = 0;
 }
 
 /* ---------- ダンジョン描画 ---------- */
@@ -297,61 +300,89 @@ const dCv = $('dungeon-canvas');
 const dctx = dCv.getContext('2d');
 dctx.imageSmoothingEnabled = false;
 
-const ZONES = [
-  { f:'#3a3050', w:'#5a4a7a' }, // 紫
-  { f:'#2a3a30', w:'#3f5a48' }, // 緑
-  { f:'#3a2a2a', w:'#5a3a3a' }, // 赤茶
-  { f:'#23304a', w:'#34507a' }, // 青
-  { f:'#3a3320', w:'#5a4f30' }, // 黄土
-];
+// ネオン（デジタル）ゾーンカラー：階層が深いほどアクセント色が変わる
+const ZONES = ['#00e5ff', '#39ff14', '#ff3df0', '#ffd400', '#7a5cff'];
+function rgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+}
 
 function drawDungeon() {
-  const zone = ZONES[Math.floor((floor - 1) / 5) % ZONES.length];
+  const ac = ZONES[Math.floor((floor - 1) / 5) % ZONES.length];
+  // 背景（暗いデジタル空間）
+  dctx.fillStyle = '#05070d';
+  dctx.fillRect(0, 0, 480, 320);
+
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
       const px = c * TILE, py = r * TILE;
       if (map[r][c] === 1) {
-        dctx.fillStyle = zone.w;
-        dctx.fillRect(px, py, TILE, TILE);
-        dctx.fillStyle = 'rgba(0,0,0,.25)';
-        dctx.fillRect(px, py + TILE - 5, TILE, 5);
-        dctx.fillRect(px + TILE - 5, py, 5, TILE);
+        // データブロック（壁）
+        dctx.fillStyle = '#0b1226';
+        dctx.fillRect(px + 1, py + 1, TILE - 2, TILE - 2);
+        dctx.fillStyle = rgba(ac, 0.85);              // ネオン上辺・左辺
+        dctx.fillRect(px + 1, py + 1, TILE - 2, 2);
+        dctx.fillRect(px + 1, py + 1, 2, TILE - 2);
+        dctx.fillStyle = 'rgba(0,0,0,.55)';           // 影
+        dctx.fillRect(px + 1, py + TILE - 3, TILE - 2, 2);
+        dctx.fillRect(px + TILE - 3, py + 1, 2, TILE - 2);
+        dctx.fillStyle = rgba(ac, 0.30);              // 内部の回路ドット
+        dctx.fillRect(px + 8, py + 10, 3, 3);
+        dctx.fillRect(px + 20, py + 18, 3, 3);
       } else {
-        dctx.fillStyle = ((r + c) % 2 === 0) ? zone.f : shade(zone.f, -10);
-        dctx.fillRect(px, py, TILE, TILE);
+        // 床：グリッド＋回路ノード
+        dctx.strokeStyle = rgba(ac, 0.10);
+        dctx.lineWidth = 1;
+        dctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
+        const h = (r * 31 + c * 17) % 6;
+        if (h === 0) {
+          dctx.fillStyle = rgba(ac, 0.45);
+          dctx.fillRect(px + 14, py + 14, 4, 4);
+          dctx.fillStyle = rgba(ac, 0.16);
+          dctx.fillRect(px + 15, py + 4, 2, 11);
+        } else if (h === 3) {
+          dctx.fillStyle = rgba(ac, 0.14);
+          dctx.fillRect(px + 6, py + 16, 20, 2);
+        }
       }
     }
   }
-  // 階段
+
+  // 階段（アップリンク・ポータル）
   if (stairs) {
     const px = stairs.x * TILE, py = stairs.y * TILE;
-    dctx.fillStyle = '#000'; dctx.fillRect(px + 4, py + 4, 24, 24);
-    dctx.fillStyle = '#ffe14d';
-    for (let i = 0; i < 4; i++) dctx.fillRect(px + 7 + i * 2, py + 22 - i * 5, 18 - i * 4, 4);
-    dctx.fillStyle = '#fff';
-    dctx.fillRect(px + 14, py + 6, 4, 4); dctx.fillRect(px + 12, py + 8, 8, 2);
+    dctx.fillStyle = '#000'; dctx.fillRect(px + 3, py + 3, 26, 26);
+    dctx.strokeStyle = rgba(ac, 0.9); dctx.lineWidth = 2;
+    dctx.strokeRect(px + 5, py + 5, 22, 22);
+    dctx.strokeStyle = rgba(ac, 0.5);
+    dctx.strokeRect(px + 9, py + 9, 14, 14);
+    dctx.fillStyle = ac; // ▲
+    for (let i = 0; i < 4; i++) dctx.fillRect(px + 16 - i * 2, py + 12 + i * 3, 1 + i * 4, 2);
   }
-  // アイテム（ポーション）
+
+  // アイテム（データチップ＝回復）
   for (const it of items) {
     const px = it.x * TILE, py = it.y * TILE;
-    dctx.fillStyle = '#fff'; dctx.fillRect(px + 13, py + 6, 6, 4);
-    dctx.fillStyle = '#e0e0e0'; dctx.fillRect(px + 11, py + 10, 10, 16);
-    dctx.fillStyle = '#ff5b6e'; dctx.fillRect(px + 12, py + 16, 8, 9);
+    dctx.fillStyle = rgba('#2ec27e', 0.25); dctx.fillRect(px + 8, py + 8, 16, 16);
+    dctx.fillStyle = '#7CFC00'; dctx.fillRect(px + 11, py + 11, 10, 10);
+    dctx.fillStyle = '#06390f'; dctx.fillRect(px + 15, py + 12, 2, 8); dctx.fillRect(px + 12, py + 15, 8, 2);
   }
-  // 敵
+
+  // ボス（シンボル）：グリッチ風グロー＋スプライト
   for (const e of enemies) {
-    const sc = e.isBoss ? 2 : 2;
+    const sc = 2;
     const w = spriteW(e.def.spr) * sc;
+    dctx.fillStyle = rgba('#ff2d6b', 0.22);
+    dctx.fillRect(e.x * TILE + 1, e.y * TILE + 1, TILE - 2, TILE - 2);
     drawSprite(dctx, e.def.spr, e.def.pal, e.x * TILE + (TILE - w) / 2, e.y * TILE + 3, sc);
   }
+
   // 主人公
   drawSprite(dctx, SPR_AI, PAL_AI, hero.x * TILE + 2, hero.y * TILE + 2, 2);
-}
-function shade(hex, amt) {
-  const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) + amt, g = ((n >> 8) & 255) + amt, b = (n & 255) + amt;
-  r = Math.max(0, Math.min(255, r)); g = Math.max(0, Math.min(255, g)); b = Math.max(0, Math.min(255, b));
-  return `rgb(${r},${g},${b})`;
+
+  // スキャンライン（CRT/デジタル感）
+  dctx.fillStyle = 'rgba(0,0,0,0.10)';
+  for (let y = 0; y < 320; y += 3) dctx.fillRect(0, y, 480, 1);
 }
 
 /* ---------- トースト ---------- */
@@ -393,6 +424,18 @@ function tryMove(dx, dy) {
   // 階段
   if (stairs && nx === stairs.x && ny === stairs.y) { nextFloor(); return; }
   drawDungeon();
+  // ランダムエンカウント（ボス階以外。歩くほど発生率アップ）
+  if (floor % 5 !== 0) {
+    stepsSinceBattle++;
+    const chance = Math.min(0.10 + stepsSinceBattle * 0.035, 0.6);
+    if (Math.random() < chance) { stepsSinceBattle = 0; startRandomBattle(); }
+  }
+}
+
+function startRandomBattle() {
+  const def = pickEnemyDef(floor);
+  const req = 1 + (floor >= 8 ? 1 : 0) + (floor >= 16 ? 1 : 0);
+  startBattle({ x: hero.x, y: hero.y, def, hp: req, maxhp: req, isBoss: false, exp: 3 + floor });
 }
 
 function nextFloor() {
@@ -567,6 +610,7 @@ function resetGame() {
 }
 function startGame() {
   resetGame();
+  startBGM();
   showScreen('dungeon');
   drawDungeon();
   toast('▲ 1F  とうの ぼうけん スタート！');
@@ -617,6 +661,26 @@ $('quiz-submit').addEventListener('click', submitAnswer);
 $('quiz-answer').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); submitAnswer(); } });
 $('start-btn').addEventListener('click', startGame);
 $('retry-btn').addEventListener('click', startGame);
+
+/* ---------- BGM（魔王魂「ラストボス02」） ---------- */
+// ローカルに音源があればそれを、無ければ魔王魂CDNから直接読み込む（プレイ側ブラウザで再生）
+const BGM_LOCAL = './bgm/lastboss02.mp3';
+const BGM_REMOTE = 'https://maoudamashii.jokersounds.com/music/game/game_maoudamashii_2_lastboss02.mp3';
+const bgm = new Audio();
+bgm.loop = true;
+bgm.volume = 0.45;
+let bgmOn = true;
+let triedRemote = false;
+bgm.addEventListener('error', () => {
+  if (!triedRemote) { triedRemote = true; bgm.src = BGM_REMOTE; if (bgmOn) bgm.play().catch(() => {}); }
+});
+bgm.src = BGM_LOCAL;
+function startBGM() { if (bgmOn) bgm.play().catch(() => {}); }
+$('bgm-btn').addEventListener('click', () => {
+  bgmOn = !bgmOn;
+  $('bgm-btn').textContent = bgmOn ? '🔊' : '🔇';
+  if (bgmOn) bgm.play().catch(() => {}); else bgm.pause();
+});
 
 // タイトルのAI
 (function () {
